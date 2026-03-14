@@ -1,0 +1,102 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 // T\'ecm v\'e0 c\uc0\u7853 p nh\u7853 t c\'e1c bi\u7871 n n\'e0y trong \u273 o\u7841 n <script> c\u7911 a b\u7841 n:\
+\
+const box = 20;\
+const MAX_LENGTH = 100; // Gi\uc0\u7899 i h\u7841 n \u273 \u7897  d\'e0i t\u7889 i \u273 a l\'e0 100 \u273 \u7889 t\
+let snake, food, goldFood, shrinkFood, d, nextD, score, speedVal, speedDisplay, gameLoop, isRunning = false;\
+let shrinkTimer = null;\
+\
+function startGame() \{\
+    hideAll();\
+    snake = [\{x: 10 * box, y: 10 * box\}, \{x: 9 * box, y: 10 * box\}]; \
+    d = nextD = "RIGHT"; \
+    score = 0; \
+    speedVal = 150; // T\uc0\u7889 c \u273 \u7897  g\u7889 c (ms)\
+    speedDisplay = 1; // Ch\uc0\u7881  s\u7889  Speed hi\u7875 n th\u7883 \
+    isRunning = true;\
+    spawnFood();\
+    shrinkFood = null;\
+    updateUI();\
+    loop();\
+\}\
+\
+function spawnFood() \{\
+    // T\uc0\u7841 o t\'e1o th\u432 \u7901 ng\
+    food = \{ x: Math.floor(Math.random()*19+1)*box, y: Math.floor(Math.random()*19+1)*box \};\
+    if(snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();\
+\
+    // T\uc0\u7881  l\u7879  10% ra t\'e1o v\'e0ng\
+    goldFood = (Math.random() < 0.1) ? \{ x: Math.floor(Math.random()*19+1)*box, y: Math.floor(Math.random()*19+1)*box \} : null;\
+\
+    // T\uc0\u7881  l\u7879  15% ra qu\u7843  xanh r\'fat ng\u7855 n (Shrink Food)\
+    if(Math.random() < 0.15) \{\
+        shrinkFood = \{ x: Math.floor(Math.random()*19+1)*box, y: Math.floor(Math.random()*19+1)*box \};\
+        // Gi\uc0\u7899 i h\u7841 n th\u7901 i gian 7 gi\'e2y\
+        if(shrinkTimer) clearTimeout(shrinkTimer);\
+        shrinkTimer = setTimeout(() => \{ shrinkFood = null; \}, 7000); \
+    \}\
+\}\
+\
+function draw() \{\
+    d = nextD;\
+    let hX = snake[0].x, hY = snake[0].y;\
+    if(d == "LEFT") hX -= box; if(d == "UP") hY -= box;\
+    if(d == "RIGHT") hX += box; if(d == "DOWN") hY += box;\
+\
+    // Ki\uc0\u7875 m tra va ch\u7841 m\
+    if(hX < 0 || hX >= 400 || hY < 0 || hY >= 400 || snake.some(s=>s.x==hX && s.y==hY)) \{\
+        // Game Over x\uc0\u7917  l\'fd nh\u432  c\u361 ...\
+        return;\
+    \}\
+\
+    // \uc0\u258 n qu\u7843  xanh (R\'fat ng\u7855 n)\
+    if(shrinkFood && hX == shrinkFood.x && hY == shrinkFood.y) \{\
+        playSfx(400, 'triangle', 0.2);\
+        // Ng\uc0\u7855 n \u273 i 5 \u273 \u7889 t, nh\u432 ng t\u7889 i thi\u7875 u ph\u7843 i c\'f2n 2 \u273 \u7889 t\
+        for(let i=0; i<5; i++) \{ if(snake.length > 2) snake.pop(); \}\
+        shrinkFood = null;\
+    \}\
+\
+    // \uc0\u258 n t\'e1o th\u432 \u7901 ng/v\'e0ng\
+    let ate = false;\
+    if(hX == food.x && hY == food.y) \{\
+        score++;\
+        ate = true;\
+        playSfx(800, 'sine', 0.1);\
+        \
+        // C\uc0\u7913  10 qu\u7843  t\u259 ng 1 Speed (gi\u7843 m 5ms)\
+        if(score % 10 == 0 && speedVal > 50) \{\
+            speedVal -= 5;\
+            speedDisplay++;\
+        \}\
+        spawnFood();\
+    \} else if(goldFood && hX == goldFood.x && hY == goldFood.y) \{\
+        score += 5;\
+        ate = true;\
+        playSfx(1200, 'sine', 0.2);\
+        goldFood = null;\
+    \}\
+\
+    // X\uc0\u7917  l\'fd \u273 \u7897  d\'e0i\
+    let newHead = \{x: hX, y: hY\};\
+    snake.unshift(newHead);\
+    \
+    // N\uc0\u7871 u kh\'f4ng \u259 n g\'ec HO\u7862 C \u273 \'e3 \u273 \u7841 t gi\u7899 i h\u7841 n 100 \u273 \u7889 t th\'ec c\u7855 t \u273 u\'f4i \u273 \u7875  kh\'f4ng d\'e0i th\'eam\
+    if(!ate || snake.length > MAX_LENGTH) \{\
+        snake.pop();\
+    \}\
+\
+    renderCanvas(); // H\'e0m v\uc0\u7869  giao di\u7879 n\
+    updateUI();\
+\}\
+\
+function updateUI() \{\
+    document.getElementById("s").innerText = score;\
+    document.getElementById("lv").innerText = speedDisplay; // G\'e1n Speed v\'e0o ch\uc0\u7895  ID LV c\u361 \
+\}}
